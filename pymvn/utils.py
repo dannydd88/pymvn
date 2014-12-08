@@ -4,6 +4,7 @@
 
 import contextlib
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -262,3 +263,14 @@ def ExpandFileArgs(args):
     new_args[i] = arg[:match.start()] + str(expansion)
 
   return new_args
+
+
+def VerifyMD5(filename, expected_md5):
+  if not os.path.exists(filename):
+    return False
+  else:
+    md5 = hashlib.md5()
+    with open(filename, 'rb') as f:
+      for chunk in iter(lambda: f.read(8192), ''):
+        md5.update(chunk)
+    return md5.hexdigest() == expected_md5
