@@ -49,10 +49,15 @@ class Artifact(object):
       filename = filename + '-' + self.classifier
     return filename + '.' + self.extension
   
-  def GetFilename(self, filepath=None):
+  def GetFilename(self, filepath=None, detailed=False):
     filename = self._GenerateFilename()
     if filepath:
       filename = os.path.join(filepath, filename)
+    if detailed:
+      filename = os.path.join(os.path.dirname(filename),
+                              self.group_id.replace('.', '/'),
+                              self.version,
+                              os.path.basename(filename))
     return filename
 
   def GetPom(self):
@@ -92,36 +97,44 @@ class Artifact(object):
 
 
 if __name__ == '__main__':
-  coordinate1 = 'junit:junit:4.2'
-  coordinate2 = 'junit:junit:so:4.2'
-  coordinate3 = 'junit:junit:jar:sources:4.2'
-
   # Test1
+  coordinate1 = 'junit:junit:4.2'
   arti1 = Artifact.Parse(coordinate1)
   assert coordinate1 == str(arti1)
   assert 'junit/junit/4.2' == arti1.Path()
   assert 'junit/junit' == arti1.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2.jar' == arti1.Path(with_filename=True)
   assert 'junit.jar' == arti1.GetFilename()
-  assert '/home/pymvn/junit.jar' == arti1.GetFilename('/home/pymvn/')
+  assert '/home/pymvn/junit.jar' == arti1.GetFilename(filepath='/home/pymvn/')
+  assert 'junit/4.2/junit.jar' == arti1.GetFilename(detailed=True)
+  assert '/home/pymvn/junit/4.2/junit.jar' == arti1.GetFilename(filepath='/home/pymvn/',
+                                                                detailed=True)
   assert 'junit-4.2.pom' == arti1.GetPom()
 
   # Test2
+  coordinate2 = 'junit:junit:so:4.2'
   arti2 = Artifact.Parse(coordinate2)
   assert coordinate2 == str(arti2)
   assert 'junit/junit/4.2' == arti2.Path()
   assert 'junit/junit' == arti2.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2.so' == arti2.Path(with_filename=True)
   assert 'junit.so' == arti2.GetFilename()
-  assert '/home/pymvn/junit.so' == arti2.GetFilename('/home/pymvn/')
+  assert '/home/pymvn/junit.so' == arti2.GetFilename(filepath='/home/pymvn/')
+  assert 'junit/4.2/junit.so' == arti2.GetFilename(detailed=True)
+  assert '/home/pymvn/junit/4.2/junit.so' == arti2.GetFilename(filepath='/home/pymvn/',
+                                                               detailed=True)
 
   # Test3
+  coordinate3 = 'junit:junit:jar:sources:4.2'
   arti3 = Artifact.Parse(coordinate3)
   assert coordinate3 == str(arti3)
   assert 'junit/junit/4.2' == arti3.Path()
   assert 'junit/junit' == arti3.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2-sources.jar' == arti3.Path(with_filename=True)
   assert 'junit-sources.jar' == arti3.GetFilename()
-  assert '/home/pymvn/junit-sources.jar' == arti3.GetFilename('/home/pymvn/')
+  assert '/home/pymvn/junit-sources.jar' == arti3.GetFilename(filepath='/home/pymvn/')
+  assert 'junit/4.2/junit-sources.jar' == arti3.GetFilename(detailed=True)
+  assert '/home/pymvn/junit/4.2/junit-sources.jar' == arti3.GetFilename(filepath='/home/pymvn/',
+                                                                        detailed=True)
 
   print 'Pass'

@@ -16,7 +16,8 @@ class MavenDownloader(downloader.FileDownloader):
   
   def Download(self, options, artifacts):
     for arti in artifacts:
-      filename = arti.GetFilename(options.output_dir)
+      filename = arti.GetFilename(filepath=options.output_dir,
+                                  detailed=options.detailed_path)
       artifact_path = arti.Path(with_filename=True)
       if not self._VerifyMD5(filename, artifact_path + '.md5'):
         self.Fetch(artifact_path, filename, options.quite)
@@ -38,6 +39,10 @@ def DoMain(argv):
                     action='store_true',
                     default=False,
                     help='Only print paths of downloaded files')
+  parser.add_option('--detailed-path',
+                    action='store_true',
+                    default=False,
+                    help='Output files with groupId and version in its path')
   parser.add_option('--quite',
                     action='store_true',
                     default=False,
@@ -67,7 +72,8 @@ def DoMain(argv):
 
   if options.print_only:
     utils.CheckOptions(options, parser, required=['output_dir'])
-    return ' '.join([arti.GetFilename(options.output_dir) for arti in download_artifacts])
+    return ' '.join([arti.GetFilename(filepath=options.output_dir,
+                                      detailed=options.detailed_path) for arti in download_artifacts])
   
   d.Download(options, download_artifacts) 
 
