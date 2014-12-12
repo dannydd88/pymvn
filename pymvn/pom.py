@@ -42,11 +42,13 @@ class Pom(object):
     group_id = tree.findtext('%sgroupId'  % POM_NS)
     artifact_id = tree.findtext('%sartifactId'  % POM_NS)
     version = tree.findtext('%sversion'  % POM_NS)
+    packaging = tree.findtext('%spackaging'  % POM_NS)
 
     if version == PROJECT_VERSION:
       version = self.parent_artifact.version
 
-    arti = a.Artifact(group_id, artifact_id, version)
+    arti = a.Artifact(group_id, artifact_id, version,
+                      extension=packaging)
 
     # check artifact version
     if not arti.version:
