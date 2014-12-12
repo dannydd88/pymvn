@@ -28,6 +28,12 @@ class Pom(object):
     self.tree = xml.fromstring(content)
     self.parent_artifact = self._GetParent()
     self.parent_pom = None
+    self._UpdateExtension()
+
+  def _UpdateExtension(self):
+    ext = self.tree.findtext('%spackaging' % POM_NS)
+    if ext:
+      self.this_artifact.extension = ext
 
   def _GetProperty(self, p):
     key = '%sproperties/%s%s' % (POM_NS, POM_NS, p)
@@ -42,13 +48,11 @@ class Pom(object):
     group_id = tree.findtext('%sgroupId'  % POM_NS)
     artifact_id = tree.findtext('%sartifactId'  % POM_NS)
     version = tree.findtext('%sversion'  % POM_NS)
-    packaging = tree.findtext('%spackaging'  % POM_NS)
 
     if version == PROJECT_VERSION:
       version = self.parent_artifact.version
 
-    arti = a.Artifact(group_id, artifact_id, version,
-                      extension=packaging)
+    arti = a.Artifact(group_id, artifact_id, version)
 
     # check artifact version
     if not arti.version:
