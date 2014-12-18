@@ -10,6 +10,7 @@ POM_NS = '{http://maven.apache.org/POM/4.0.0}'
 PROJECT_VERSION = '${project.version}'
 
 IGNORE_DEPENDENCIES = [ 'javax.', 'com.sun.', ]
+KNOWN_PACKAGES = [ 'jar', 'war', 'so', 'a', 'zip', 'rar', '7z' ]
 
 
 def _InIgnoreDependencies(dep):
@@ -33,7 +34,11 @@ class Pom(object):
   def _UpdateExtension(self):
     ext = self.tree.findtext('%spackaging' % POM_NS)
     if ext:
-      self.this_artifact.extension = ext
+      if ext in KNOWN_PACKAGES:
+        self.this_artifact.extension = ext
+      #else:
+      #  print('Packaging[%s] is not in known package list'
+      #        ' while parsing %s, ignore it' % (ext, self.this_artifact))
 
   def _GetProperty(self, p):
     key = '%sproperties/%s%s' % (POM_NS, POM_NS, p)

@@ -20,6 +20,8 @@ class MavenDownloader(downloader.FileDownloader):
                                   detailed=options.detailed_path)
       artifact_path = arti.Path(with_filename=True)
       if not self._VerifyMD5(filename, artifact_path + '.md5'):
+        if not options.quite:
+          print('Start to fetch %s' % str(arti))
         self.Fetch(artifact_path, filename, options.quite)
       else:
         if not options.quite:
