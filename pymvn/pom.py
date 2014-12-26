@@ -119,7 +119,7 @@ class Pom(object):
     for arti in origin_dependencies:
       match = False
       for new in dependencise:
-        if new.group_id == arti.group_id and new.artifact_id == arti.artifact_id:
+        if arti.ArtifactEquel(new):
           if cmp(arti.version, new.version) > 0:
             # Trick: compare version in str,
             #  always use the highest version of dependency.

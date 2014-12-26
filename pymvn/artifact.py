@@ -63,6 +63,12 @@ class Artifact(object):
   def GetPom(self):
     assert self.version
     return self.artifact_id + '-' + self.version + '.pom'
+
+  def ArtifactEquel(self, other):
+    return self.group_id == other.group_id \
+        and self.artifact_id == other.artifact_id \
+        and self.extension == other.extension \
+        and self.classifier == other.classifier
   
   def __str__(self):
     if self.classifier:
@@ -78,7 +84,7 @@ class Artifact(object):
                               self.version)
     else:
       return '%s:%s:%s' % (self.group_id, self.artifact_id, self.version)
-  
+
   @staticmethod
   def Parse(coordinate):
     parts = coordinate.split(':')
@@ -136,5 +142,13 @@ if __name__ == '__main__':
   assert 'junit/4.2/junit-sources.jar' == arti3.GetFilename(detailed=True)
   assert '/home/pymvn/junit/4.2/junit-sources.jar' == arti3.GetFilename(filepath='/home/pymvn/',
                                                                         detailed=True)
+
+  # Test compare
+  assert arti1.ArtifactEquel(arti1)
+  assert arti2.ArtifactEquel(arti2)
+  assert arti3.ArtifactEquel(arti3)
+  assert not arti1.ArtifactEquel(arti2)
+  assert not arti1.ArtifactEquel(arti3)
+  assert not arti2.ArtifactEquel(arti3)
 
   print 'Pass'
