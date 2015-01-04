@@ -95,7 +95,8 @@ class Pom(object):
         # skip optional dependency
         continue
       pending_arti = self._BuildArtifact(d) 
-      if str(pending_arti) not in parent_str_needs and not _InIgnoreDependencies(pending_arti.group_id):
+      if str(pending_arti) not in parent_str_needs and \
+          not _InIgnoreDependencies(pending_arti.group_id):
         dep.append(pending_arti)
     return dep
 
@@ -113,22 +114,33 @@ class Pom(object):
     return Pom(downloader, content, arti)
 
   @staticmethod
-  def Slim(origin_dependencies):
-    '''Slim dependencise list by removing duplicate dependency'''
-    dependencise = []
+  def Slim(origin_dependencies, input_dependencies=None):
+    '''Slim dependencies list by removing duplicate dependency.
+       Note that we will keep the |input_dependencies| version while removing
+       duplicate dependencies.'''
+    dependencies = []
+    # remove the duplicate dependency.
     for arti in origin_dependencies:
       match = False
-      for new in dependencise:
+      for new in dependencies:
         if arti.ArtifactEquel(new):
+          match = True
           if cmp(arti.version, new.version) > 0:
             # Trick: compare version in str,
             #  always use the highest version of dependency.
             new.version = arti.version
-          match = True
           break
       if not match:
-        dependencise.append(arti)
-    return dependencise
+        dependencies.append(arti)
+    # final check dependencies, make sure final dependency appear in
+    # |input_dependencies| should share the same version.
+    if input_dependencies:
+      for dep in dependencies:
+        for input_dep in input_dependencies:
+          if dep.ArtifactEquel(input_dep):
+            dep.version = input_dep.version
+            break
+    return dependencies
 
 
 if __name__ == '__main__':

@@ -62,7 +62,8 @@ def DoMain(argv):
     artifacts.append(artifact.Artifact.Parse(coordiante))
 
   # parse all dependencise according coordinate inputs.
-  mvn_url = 'http://repo1.maven.org/maven2/' if not options.mvn_server else options.mvn_server
+  mvn_url = 'http://repo1.maven.org/maven2/' if not options.mvn_server \
+      else options.mvn_server
   d = MavenDownloader(mvn_url)
   download_artifacts = []
   for arti in artifacts:
@@ -70,12 +71,13 @@ def DoMain(argv):
     download_artifacts.extend(p.GetCompileNeededArtifacts())
 
   # slim the all in one dependencise list, we know we are doing here!
-  download_artifacts = pom.Pom.Slim(download_artifacts)
+  download_artifacts = pom.Pom.Slim(download_artifacts, artifacts)
 
   if options.print_only:
     utils.CheckOptions(options, parser, required=['output_dir'])
     return ' '.join([arti.GetFilename(filepath=options.output_dir,
-                                      detailed=options.detailed_path) for arti in download_artifacts])
+                                      detailed=options.detailed_path) \
+                     for arti in download_artifacts])
   
   d.Download(options, download_artifacts) 
 
