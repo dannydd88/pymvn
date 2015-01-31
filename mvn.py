@@ -9,16 +9,29 @@ from pymvn import artifact, downloader, pom, utils
 
 
 class MavenDownloader(downloader.FileDownloader):
-  def __init__(self, mvn_server):
+  def __init__(self, mvn_server, mvn_snapshot_server=None):
     if not mvn_server.endswith('/'):
       mvn_server = mvn_server + '/'
-    downloader.FileDownloader.__init__(self, base=mvn_server)
+    if mvn_snapshot_server and not mvn_snapshot_server.endswith('/'):
+      mvn_snapshot_server = mvn_snapshot_server + '/'
+    self.mvn_server = mvn_server
+    self.mvn_snapshot_server = mvn_snapshot_server
+    downloader.Downloader.__init__(self)
+
+  def GetBaseUri(self, *args):
+    assert len(args) == 1
+
+    if args[0].IsSnapshot():
+      assert self.mvn_snapshot_server
+      return self.mvn_snapshot_server
+
+    return self.mvn_server
   
   def Download(self, options, artifacts):
     for arti in artifacts:
       filename = arti.GetFilename(filepath=options.output_dir,
                                   detailed=options.detailed_path)
-      artifact_path = arti.Path(with_filename=True)
+      artifact_path = self.GetBaseUri(arti) + arti.Path(with_filename=True)
       if not self._VerifyMD5(filename, artifact_path + '.md5'):
         if not options.quite:
           print('Start to fetch %s' % str(arti))
@@ -36,6 +49,7 @@ def DoMain(argv):
   usage = 'Usage: %prog [options] coordinate1 coordinate2 ...'
   parser = optparse.OptionParser(usage=usage)
   parser.add_option('--mvn-server', help='Custom maven server')
+  parser.add_option('--mvn-snapshot-server', help='Custom maven snapshot server')
   parser.add_option('--output-dir', help='Directory to save downloaded files')
   parser.add_option('--print-only',
                     action='store_true',
@@ -57,14 +71,19 @@ def DoMain(argv):
     parser.print_help()
     return 2
 
-  artifacts = []
-  for coordiante in args:
-    artifacts.append(artifact.Artifact.Parse(coordiante))
-
-  # parse all dependencise according coordinate inputs.
+  # prepare downloader.
   mvn_url = 'http://repo1.maven.org/maven2/' if not options.mvn_server \
       else options.mvn_server
-  d = MavenDownloader(mvn_url)
+  mvn_snapshot_url = None if not options.mvn_snapshot_server \
+      else options.mvn_snapshot_server
+  d = MavenDownloader(mvn_url, mvn_snapshot_server=mvn_snapshot_url)
+
+  # prepare pending artifacts.
+  artifacts = []
+  for coordiante in args:
+    artifacts.append(artifact.Artifact.Parse(coordiante, downloader=d))
+
+  # parse all dependencise according coordinate inputs.
   download_artifacts = []
   for arti in artifacts:
     p = pom.Pom.Parse(d, arti)

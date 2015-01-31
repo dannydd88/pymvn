@@ -23,6 +23,7 @@ class Artifact(object):
     self.group_id = group_id
     self.artifact_id = artifact_id
     self.version = version
+    self.snapshot_version = None
     self.classifier = classifier
     if not extension:
       self.extension = 'jar'
@@ -30,7 +31,11 @@ class Artifact(object):
       self.extension = extension
   
   def IsSnapshot(self):
-    return self.version.endswith('SNAPSHOT')
+    return self.version.endswith('SNAPSHOT') if self.version else False
+
+  def GetSnapshotVersion(self):
+    assert self.IsSnapshot()
+    return self.version[:self.version.find('SNAPSHOT')]
   
   def Path(self, with_version=True, with_filename=False):
     path = self.group_id.replace('.', '/') + '/' + self.artifact_id
@@ -43,8 +48,9 @@ class Artifact(object):
   def _GenerateFilename(self, with_version=False):
     filename = self.artifact_id
     if with_version:
-      assert self.version
-      filename = filename + '-' + self.version
+      v = self.version if not self.IsSnapshot() else self.snapshot_version
+      assert v
+      filename = filename + '-' + v
     if self.classifier:
       filename = filename + '-' + self.classifier
     return filename + '.' + self.extension
@@ -61,8 +67,9 @@ class Artifact(object):
     return filename
 
   def GetPom(self):
-    assert self.version
-    return self.artifact_id + '-' + self.version + '.pom'
+    v = self.version if not self.IsSnapshot() else self.snapshot_version
+    assert v
+    return self.artifact_id + '-' + v + '.pom'
 
   def ArtifactEquel(self, other):
     return self.group_id == other.group_id \
@@ -86,7 +93,7 @@ class Artifact(object):
       return '%s:%s:%s' % (self.group_id, self.artifact_id, self.version)
 
   @staticmethod
-  def Parse(coordinate):
+  def Parse(coordinate, downloader=None):
     parts = coordinate.split(':')
     assert len(parts) >= 3
     g = parts[0]
@@ -99,7 +106,14 @@ class Artifact(object):
     if len(parts) == 5:
       t = parts[2]
       c = parts[3]
-    return Artifact(g, a, v, c, t)
+    arti = Artifact(g, a, v, c, t)
+    if arti.IsSnapshot():
+      # handle snapshot version
+      assert downloader
+      import metadata
+      meta = metadata.Metadata.Parse(downloader, arti)
+      arti.snapshot_version = meta.GetLastversion()
+    return arti
 
 
 if __name__ == '__main__':
@@ -150,5 +164,17 @@ if __name__ == '__main__':
   assert not arti1.ArtifactEquel(arti2)
   assert not arti1.ArtifactEquel(arti3)
   assert not arti2.ArtifactEquel(arti3)
+
+  # Test snapshot
+  import downloader
+  d = downloader.Downloader(
+      base='http://10.1.73.82:8081/nexus/service/local/repositories/snapshots/content/')
+  coordinate_snapshot = 'com.octopus:server:0.1.0-SNAPSHOT'
+  arti_snapshot = Artifact.Parse(coordinate_snapshot, d)
+  assert arti_snapshot.IsSnapshot() == True
+  print arti_snapshot.GetSnapshotVersion()
+  print arti_snapshot.snapshot_version
+  print arti_snapshot.GetPom()
+  print arti_snapshot.Path(with_version=True, with_filename=True)
 
   print 'Pass'

@@ -68,6 +68,12 @@ class Pom(object):
       # property should in form of ${key}
       arti.version = self._GetProperty(arti.version[2:-1])
 
+    # check whether artifact is a snapshot version
+    if arti.IsSnapshot():
+      arti.snapshot_version = m.Metadata(self.downloader,
+                                         arti).GetLastversion()
+      assert arti.snapshot_version
+
     #print '%s - %s' % (str(self.this_artifact), str(arti))
     assert arti.version
     return arti
@@ -109,7 +115,7 @@ class Pom(object):
 
   @staticmethod
   def Parse(downloader, arti):
-    url = '%s/%s/%s' % (downloader.base, arti.Path(), arti.GetPom())
+    url = '%s/%s/%s' % (downloader.GetBaseUri(arti), arti.Path(), arti.GetPom())
     content = downloader.Get(url, 'Failed to fetch pom.xml', lambda r: r.read())
     return Pom(downloader, content, arti)
 

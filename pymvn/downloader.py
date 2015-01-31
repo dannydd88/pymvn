@@ -35,6 +35,9 @@ class Downloader(object):
     #print 'normalized url -- %s' % normalized_url
     return normalized_url
 
+  def GetBaseUri(self, *args):
+    return self.base
+
   def Get(self, url, failmsg, func):
     '''Request url by HTTP GET'''
     headers = { 'User-Agent': self.user_agent, }
