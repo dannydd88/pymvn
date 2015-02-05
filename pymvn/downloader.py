@@ -35,9 +35,6 @@ class Downloader(object):
     #print 'normalized url -- %s' % normalized_url
     return normalized_url
 
-  def GetBaseUri(self, *args):
-    return self.base
-
   def Get(self, url, failmsg, func):
     '''Request url by HTTP GET'''
     headers = { 'User-Agent': self.user_agent, }
@@ -117,8 +114,8 @@ if __name__ == '__main__':
 
   # Test4
   md5_2 = Downloader(base='http://repo1.maven.org/maven2/').Get('junit/junit/maven-metadata.xml.md5',
-                                                               'Failed',
-                                                               lambda r: r.read())
+                                                                'Failed',
+                                                                lambda r: r.read())
   assert md5 == md5_2
 
   # Check job.

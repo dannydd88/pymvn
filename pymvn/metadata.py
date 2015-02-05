@@ -23,7 +23,7 @@ class Metadata(object):
   @staticmethod
   def Parse(downloader, arti):
     is_snapshot = arti.IsSnapshot()
-    url = '%s/%s/maven-metadata.xml' % (downloader.GetBaseUri(arti), 
+    url = '%s/%s/maven-metadata.xml' % (downloader.base,
                                         arti.Path(with_version=is_snapshot))
     content = downloader.Get(url, 'Failed to fetch metadata.xml',
                              lambda r: r.read())
@@ -38,8 +38,8 @@ if __name__ == '__main__':
   print meta.GetLastversion()
 
   # self server test.
-  arti2 = artifact.Artifact.Parse('com.octopus:server:0.1.0-SNAPSHOT')
   d2 = downloader.Downloader(
-      base='http://10.1.73.82:8081/nexus/service/local/repositories/snapshots/content/')
+      base='http://10.1.73.82:8081/nexus/content/groups/public/')
+  arti2 = artifact.Artifact.Parse('com.octopus:server:0.1.0-SNAPSHOT', d2)
   meta = Metadata.Parse(d2, arti2)
   print meta.GetLastversion()

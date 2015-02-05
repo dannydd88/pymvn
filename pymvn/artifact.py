@@ -168,8 +168,8 @@ if __name__ == '__main__':
   # Test snapshot
   import downloader
   d = downloader.Downloader(
-      base='http://10.1.73.82:8081/nexus/service/local/repositories/snapshots/content/')
-  coordinate_snapshot = 'com.octopus:server:0.1.0-SNAPSHOT'
+      base='http://10.1.73.82:8081/nexus/content/groups/public/')
+  coordinate_snapshot = 'com.octopus:octopus-server:0.1.0-SNAPSHOT'
   arti_snapshot = Artifact.Parse(coordinate_snapshot, d)
   assert arti_snapshot.IsSnapshot() == True
   print arti_snapshot.GetSnapshotVersion()

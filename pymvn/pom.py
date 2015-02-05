@@ -115,7 +115,7 @@ class Pom(object):
 
   @staticmethod
   def Parse(downloader, arti):
-    url = '%s/%s/%s' % (downloader.GetBaseUri(arti), arti.Path(), arti.GetPom())
+    url = '%s/%s/%s' % (downloader.base, arti.Path(), arti.GetPom())
     content = downloader.Get(url, 'Failed to fetch pom.xml', lambda r: r.read())
     return Pom(downloader, content, arti)
 
