@@ -12,7 +12,7 @@ class MavenDownloader(downloader.FileDownloader):
   def __init__(self, mvn_server):
     if not mvn_server.endswith('/'):
       mvn_server = mvn_server + '/'
-    downloader.Downloader.__init__(self, base=mvn_server)
+    downloader.FileDownloader.__init__(self, base=mvn_server)
 
   def Download(self, options, artifacts):
     for arti in artifacts:
