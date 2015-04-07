@@ -14,7 +14,8 @@ class Artifact(object):
   '''
   def __init__(self, group_id, artifact_id, version,
                classifier=None,
-               extension=None):
+               extension=None,
+               snapshot_version=None):
     if not group_id:
       raise ValueError('group_id must be set')
     if not artifact_id:
@@ -23,20 +24,33 @@ class Artifact(object):
     self.group_id = group_id
     self.artifact_id = artifact_id
     self.version = version
-    self.snapshot_version = None
+    self.snapshot_version = snapshot_version
     self.classifier = classifier
     if not extension:
       self.extension = 'jar'
     else:
       self.extension = extension
-  
+
+  def GenerateSourcesJarArtifact(self):
+    if self.extension != 'jar':
+      return None
+    if self.classifier == 'sources':
+      return self
+    arti = Artifact(self.group_id,
+                    self.artifact_id,
+                    self.version,
+                    classifier='sources',
+                    extension=self.extension,
+                    snapshot_version=self.snapshot_version)
+    return arti
+
   def IsSnapshot(self):
     return self.version.endswith('SNAPSHOT') if self.version else False
 
   def GetSnapshotVersion(self):
     assert self.IsSnapshot()
     return self.version[:self.version.find('SNAPSHOT')]
-  
+
   def Path(self, with_version=True, with_filename=False):
     path = self.group_id.replace('.', '/') + '/' + self.artifact_id
     if with_version:
@@ -44,7 +58,7 @@ class Artifact(object):
     if with_filename:
       path = path + '/' + self._GenerateFilename(True)
     return path
-  
+
   def _GenerateFilename(self, with_version=False):
     filename = self.artifact_id
     if with_version:
@@ -54,7 +68,7 @@ class Artifact(object):
     if self.classifier:
       filename = filename + '-' + self.classifier
     return filename + '.' + self.extension
-  
+
   def GetFilename(self, filepath=None, detailed=False):
     filename = self._GenerateFilename()
     if filepath:
@@ -130,6 +144,7 @@ if __name__ == '__main__':
   assert '/home/pymvn/junit/4.2/junit.jar' == arti1.GetFilename(filepath='/home/pymvn/',
                                                                 detailed=True)
   assert 'junit-4.2.pom' == arti1.GetPom()
+  assert 'junit:junit:jar:sources:4.2' == str(arti1.GenerateSourcesJarArtifact())
 
   # Test2
   coordinate2 = 'junit:junit:so:4.2'
@@ -156,6 +171,7 @@ if __name__ == '__main__':
   assert 'junit/4.2/junit-sources.jar' == arti3.GetFilename(detailed=True)
   assert '/home/pymvn/junit/4.2/junit-sources.jar' == arti3.GetFilename(filepath='/home/pymvn/',
                                                                         detailed=True)
+  assert 'junit:junit:jar:sources:4.2' == str(arti3.GenerateSourcesJarArtifact())
 
   # Test compare
   assert arti1.ArtifactEquel(arti1)
@@ -168,13 +184,20 @@ if __name__ == '__main__':
   # Test snapshot
   import downloader
   d = downloader.Downloader(
-      base='http://10.1.73.82:8081/nexus/content/groups/public/')
-  coordinate_snapshot = 'com.octopus:octopus-server:0.1.0-SNAPSHOT'
+      base='http://100.84.73.82:8081/nexus/content/groups/public/')
+  coordinate_snapshot = 'com.octopus:octopus-server:0.5.0-SNAPSHOT'
   arti_snapshot = Artifact.Parse(coordinate_snapshot, d)
   assert arti_snapshot.IsSnapshot() == True
   print arti_snapshot.GetSnapshotVersion()
   print arti_snapshot.snapshot_version
   print arti_snapshot.GetPom()
   print arti_snapshot.Path(with_version=True, with_filename=True)
+  arti_sources_snapshot = arti_snapshot.GenerateSourcesJarArtifact() 
+  assert arti_sources_snapshot.IsSnapshot() == True
+  print str(arti_sources_snapshot)
+  print arti_sources_snapshot.GetSnapshotVersion()
+  print arti_sources_snapshot.snapshot_version
+  print arti_sources_snapshot.GetPom()
+  print arti_sources_snapshot.Path(with_version=True, with_filename=True)
 
   print 'Pass'

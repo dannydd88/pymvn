@@ -16,9 +16,18 @@ class MavenDownloader(downloader.FileDownloader):
 
   def Download(self, options, artifacts):
     for arti in artifacts:
-      filename = arti.GetFilename(filepath=options.output_dir,
-                                  detailed=options.detailed_path)
-      artifact_path = self.base + arti.Path(with_filename=True)
+      self.DoDownload(options, arti)
+      if options.with_sources:
+        sources_arti = arti.GenerateSourcesJarArtifact()
+        if sources_arti is None:
+          continue
+        self.DoDownload(options, sources_arti, raise_when_fail=False)
+
+  def DoDownload(self, options, arti, raise_when_fail=True):
+    filename = arti.GetFilename(filepath=options.output_dir,
+                                detailed=options.detailed_path)
+    artifact_path = self.base + arti.Path(with_filename=True)
+    try:
       if not self._VerifyMD5(filename, artifact_path + '.md5'):
         if not options.quite:
           print('Start to fetch %s' % str(arti))
@@ -26,6 +35,11 @@ class MavenDownloader(downloader.FileDownloader):
       else:
         if not options.quite:
           print('%s is already up to date' % str(arti))
+    except Exception as e:
+      if raise_when_fail:
+        raise e
+      elif not options.quite:
+        print('%s fetch error, skip' % str(arti))
   
   def _VerifyMD5(self, filename, url_path):
     remote_md5 = self.Get(url_path, 'Failed to fetch MD5', lambda r: r.read())
@@ -45,6 +59,10 @@ def DoMain(argv):
                     action='store_true',
                     default=False,
                     help='Output files with groupId and version in its path')
+  parser.add_option('--with-sources',
+                    action='store_true',
+                    default=False,
+                    help='Try to download sources too')
   parser.add_option('--quite',
                     action='store_true',
                     default=False,

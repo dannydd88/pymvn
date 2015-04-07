@@ -1,10 +1,11 @@
 # Downloader.
 
-
+import os
 import sys
 import posixpath
 import urllib2
 import urlparse
+import utils
 
 
 DEFAULT_USER_AGENT = 'pymvn downloader/1.0'
@@ -55,6 +56,9 @@ class FileDownloader(Downloader):
 
   def Fetch(self, url, filename, quite=False):
     '''Fetch a file according url to filename'''
+    dst_dir = os.path.dirname(filename)
+    if not os.path.exists(dst_dir):
+      utils.MakeDirectory(dst_dir)
     response = self.Get(url, 'Failed to download %s' % url, lambda r: r)
 
     if response:
