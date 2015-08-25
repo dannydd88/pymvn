@@ -106,6 +106,26 @@ class Artifact(object):
     else:
       return '%s:%s:%s' % (self.group_id, self.artifact_id, self.version)
 
+  def ToGradleCoordinate(self):
+    '''
+    Refer: https://docs.gradle.org/current/userguide/dependency_management.html
+    Format:
+    - <group_id>:<artifact_id>:<version>[ :<classifier> [ @<extension> ] ]
+    '''
+    if self.classifier:
+      return '%s:%s:%s:%s@%s' % (self.group_id,
+                                 self.artifact_id,
+                                 self.version,
+                                 self.classifier,
+                                 self.extension)
+    elif self.extension != 'jar':
+      return '%s:%s:%s@%s' % (self.group_id,
+                              self.artifact_id,
+                              self.version,
+                              self.extension)
+    else:
+      return self.__str__()
+
   @staticmethod
   def Parse(coordinate, downloader=None):
     parts = coordinate.split(':')
@@ -135,6 +155,7 @@ if __name__ == '__main__':
   coordinate1 = 'junit:junit:4.2'
   arti1 = Artifact.Parse(coordinate1)
   assert coordinate1 == str(arti1)
+  assert coordinate1 == arti1.ToGradleCoordinate()
   assert 'junit/junit/4.2' == arti1.Path()
   assert 'junit/junit' == arti1.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2.jar' == arti1.Path(with_filename=True)
@@ -150,6 +171,7 @@ if __name__ == '__main__':
   coordinate2 = 'junit:junit:so:4.2'
   arti2 = Artifact.Parse(coordinate2)
   assert coordinate2 == str(arti2)
+  assert 'junit:junit:4.2@so' == arti2.ToGradleCoordinate()
   assert 'junit/junit/4.2' == arti2.Path()
   assert 'junit/junit' == arti2.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2.so' == arti2.Path(with_filename=True)
@@ -163,6 +185,7 @@ if __name__ == '__main__':
   coordinate3 = 'junit:junit:jar:sources:4.2'
   arti3 = Artifact.Parse(coordinate3)
   assert coordinate3 == str(arti3)
+  assert 'junit:junit:4.2:sources@jar' == arti3.ToGradleCoordinate()
   assert 'junit/junit/4.2' == arti3.Path()
   assert 'junit/junit' == arti3.Path(with_version=False)
   assert 'junit/junit/4.2/junit-4.2-sources.jar' == arti3.Path(with_filename=True)
