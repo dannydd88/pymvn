@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+import argparse
 import hashlib
-import optparse
 import os
 import sys
 
@@ -47,33 +47,33 @@ class MavenDownloader(downloader.FileDownloader):
   
 
 def DoMain(argv):
-  usage = 'Usage: %prog [options] coordinate1 coordinate2 ...'
-  parser = optparse.OptionParser(usage=usage)
-  parser.add_option('--mvn-server', help='Custom maven server')
-  parser.add_option('--output-dir', help='Directory to save downloaded files')
-  parser.add_option('--print-only',
-                    action='store_true',
-                    default=False,
-                    help='Only print paths of downloaded files')
-  parser.add_option('--detailed-path',
-                    action='store_true',
-                    default=False,
-                    help='Output files with groupId and version in its path')
-  parser.add_option('--with-sources',
-                    action='store_true',
-                    default=False,
-                    help='Try to download sources too')
-  parser.add_option('--quite',
-                    action='store_true',
-                    default=False,
-                    help='Do not output logs')
+  description = 'Fetch binary according maven coordinate protocol.'
+  parser = argparse.ArgumentParser(description=description)
+  parser.add_argument('--mvn-server', help='Custom maven server')
+  parser.add_argument('--output-dir',
+                      required=True,
+                      help='Directory to save downloaded files')
+  parser.add_argument('--print-only',
+                      action='store_true',
+                      default=False,
+                      help='Only print paths of downloaded files')
+  parser.add_argument('--detailed-path',
+                      action='store_true',
+                      default=False,
+                      help='Output files with groupId and version in its path')
+  parser.add_argument('--with-sources',
+                      action='store_true',
+                      default=False,
+                      help='Try to download sources too')
+  parser.add_argument('--quite',
+                      action='store_true',
+                      default=False,
+                      help='Do not output logs')
+  parser.add_argument('coordinate',
+                      nargs='+',
+                      help='Maven coordinate')
 
-  options, args = parser.parse_args(argv)
-
-  if not len(args):
-    utils.PrintWarning('At least input a maven coordinates!')
-    parser.print_help()
-    return 2
+  options = parser.parse_args(argv)
 
   # prepare downloader.
   mvn_url = 'http://repo1.maven.org/maven2/' if not options.mvn_server \
@@ -82,8 +82,8 @@ def DoMain(argv):
 
   # prepare pending artifacts.
   artifacts = []
-  for coordiante in args:
-    artifacts.append(artifact.Artifact.Parse(coordiante, downloader=d))
+  for coordinate in options.coordinate:
+    artifacts.append(artifact.Artifact.Parse(coordinate, downloader=d))
 
   # parse all dependencise according coordinate inputs.
   download_artifacts = []
