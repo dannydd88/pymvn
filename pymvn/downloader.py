@@ -3,17 +3,21 @@
 import os
 import sys
 import posixpath
-import urllib2
 import urlparse
 import utils
 
 
-DEFAULT_USER_AGENT = 'pymvn downloader/1.0'
+class Fetcher(object):
+  def __init__(self):
+    pass
+
+  def Fetch(self, url):
+    pass
 
 
 class Downloader(object):
-  def __init__(self, user_agent=DEFAULT_USER_AGENT, base=None):
-    self.user_agent = user_agent
+  def __init__(self, fetcher, base=None):
+    self.fetcher = fetcher
     # You can init download by giving the base url,
     # So you can invoke apis passing relative url.
     self.base = base
@@ -37,22 +41,14 @@ class Downloader(object):
     return normalized_url
 
   def Get(self, url, failmsg, func):
-    '''Request url by HTTP GET'''
-    headers = { 'User-Agent': self.user_agent, }
-    request = urllib2.Request(self._NormalizeURL(url), None, headers)
-    try:
-      response = urllib2.urlopen(request)
-    except Exception, e:
-      raise Exception('%s because of %s while tried %s' % (failmsg,
-                                                           str(e),
-                                                           url))
-    else:
-      return func(response)
+    formated_url = self._NormalizeURL(url)
+    response = self.fetcher.Fetch(formated_url, failmsg)
+    return func(response)
 
 
 class FileDownloader(Downloader):
-  def __init__(self, user_agent=DEFAULT_USER_AGENT, base=None):
-    Downloader.__init__(self, user_agent, base)
+  def __init__(self, fetcher, base=None):
+    Downloader.__init__(self, fetcher, base)
 
   def Fetch(self, url, filename, quite=False):
     '''Fetch a file according url to filename'''
@@ -71,18 +67,10 @@ class FileDownloader(Downloader):
     else:
       return False
 
-  def _ChunkReport(self, bytes_so_far, chunk_size, total_size):
-    percent = float(bytes_so_far) / total_size
-    percent = round(percent * 100, 2)
-    sys.stdout.write('Downloaded %d of %d bytes (%0.2f%%)\r' % (bytes_so_far,
-                                                                total_size, percent))
-    
-    if bytes_so_far >= total_size:
-      sys.stdout.write('\n')
+  def _ChunkReport(self, bytes_so_far, chunk_size):
+    sys.stdout.write('Downloaded {} bytes\r'.format(chunk_size))
 
   def _WriteChunks(self, response, f, chunk_size=8192, report_hook=None):
-    total_size = response.info().getheader('Content-Length').strip()
-    total_size = int(total_size)
     bytes_so_far = 0
     
     while True:
@@ -90,34 +78,38 @@ class FileDownloader(Downloader):
       bytes_so_far += len(chunk)
       
       if not chunk:
+        if report_hook:
+          print('\n')
         break
       
       f.write(chunk)
       if report_hook:
-        report_hook(bytes_so_far, chunk_size, total_size)
+        report_hook(bytes_so_far, chunk_size)
     
     return bytes_so_far
 
 
 if __name__ == '__main__':
+  import http_fetcher as hf
+
   # Test job
   mvn_url = 'http://repo1.maven.org/maven2'
   metadata = mvn_url + '/junit/junit/maven-metadata.xml'
   metadata_md5 = metadata + '.md5'
 
   # Test1
-  md5 = Downloader().Get(metadata_md5, 'Failed', lambda r: r.read())
+  md5 = Downloader(hf.HttpFetcher()).Get(metadata_md5, 'Failed', lambda r: r.read())
 
   # Test2
   test2_filename = 'test2.xml'
-  assert FileDownloader().Fetch(metadata, test2_filename)
+  assert FileDownloader(hf.HttpFetcher()).Fetch(metadata, test2_filename)
 
   # Test3
   test3_filename = 'test3.xml'
-  assert FileDownloader().Fetch(metadata, test3_filename, quite=True)
+  assert FileDownloader(hf.HttpFetcher()).Fetch(metadata, test3_filename, quite=True)
 
   # Test4
-  md5_2 = Downloader(base='http://repo1.maven.org/maven2/').Get('junit/junit/maven-metadata.xml.md5',
+  md5_2 = Downloader(hf.HttpFetcher(), base='http://repo1.maven.org/maven2/').Get('junit/junit/maven-metadata.xml.md5',
                                                                 'Failed',
                                                                 lambda r: r.read())
   assert md5 == md5_2
@@ -132,5 +124,11 @@ if __name__ == '__main__':
   os.remove(test2_filename)
   os.remove(test3_filename)
 
-  print 'Pass'
+  import s3_fetcher as sf
+  target_url = 's3://ap-southeast-1.elasticmapreduce.samples/cloudfront/code/Hive_CloudFront.q'
 
+  # Test1
+  payload = Downloader(sf.S3Fetcher()).Get(target_url, 'Failed', lambda r: r.read())
+  print payload
+
+  print 'Pass'

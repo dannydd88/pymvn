@@ -8,11 +8,33 @@ import sys
 from pymvn import artifact, downloader, pom, utils
 
 
+def _http_fetcher():
+  from pymvn import http_fetcher as hf
+  return hf.HttpFetcher()
+
+
+def _s3_fetcher():
+  try:
+    from pymvn import s3_fetcher as sf
+  except ImportError:
+    raise Exception('show install boto3 while using aws feature')
+  return sf.S3Fetcher()
+
+
 class MavenDownloader(downloader.FileDownloader):
   def __init__(self, mvn_server):
-    if not mvn_server.endswith('/'):
-      mvn_server = mvn_server + '/'
-    downloader.FileDownloader.__init__(self, base=mvn_server)
+    # ). parse url scheme to find fetcher
+    import urlparse
+    urlobject = urlparse.urlparse(mvn_server)
+
+    # ). decide fetcher
+    fetcher = {
+          's3': lambda : _s3_fetcher(),
+          'http': lambda : _http_fetcher(),
+          'https': lambda : _http_fetcher(),
+        }[urlobject.scheme]()
+
+    downloader.FileDownloader.__init__(self, fetcher=fetcher, base=mvn_server)
 
   def Download(self, options, artifacts):
     for arti in artifacts:
@@ -26,7 +48,7 @@ class MavenDownloader(downloader.FileDownloader):
   def DoDownload(self, options, arti, raise_when_fail=True):
     filename = arti.GetFilename(filepath=options.output_dir,
                                 detailed=options.detailed_path)
-    artifact_path = self.base + arti.Path(with_filename=True)
+    artifact_path = '{}/{}'.format(self.base, arti.Path(with_filename=True))
     try:
       if not self._VerifyMD5(filename, artifact_path + '.md5'):
         if not options.quite:
