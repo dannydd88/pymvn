@@ -68,7 +68,7 @@ class FileDownloader(Downloader):
       return False
 
   def _ChunkReport(self, bytes_so_far, chunk_size):
-    sys.stdout.write('Downloaded {} bytes\r'.format(chunk_size))
+    sys.stdout.write('Downloaded {} bytes\r'.format(bytes_so_far))
 
   def _WriteChunks(self, response, f, chunk_size=8192, report_hook=None):
     bytes_so_far = 0
