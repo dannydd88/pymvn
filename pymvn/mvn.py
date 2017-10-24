@@ -5,6 +5,7 @@ import hashlib
 import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from pymvn import artifact, downloader, pom, utils
 
 
@@ -125,5 +126,9 @@ def DoMain(argv):
   d.Download(options, download_artifacts) 
 
 
+def main():
+  DoMain(sys.argv[1:])
+
+
 if __name__ == '__main__':
-  sys.exit(DoMain(sys.argv[1:]))
+  sys.exit(main())
